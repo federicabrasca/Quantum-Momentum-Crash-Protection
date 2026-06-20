@@ -1,7 +1,4 @@
 """
-Crash-Protected Cross-Sectional Momentum on a Quantum / AI-Technology Universe
-==============================================================================
-
 What this script does
 ---------------------
 1. Builds a self-built "quantum computing + enabling technology" universe
@@ -15,12 +12,12 @@ What this script does
 3. Adds the refinement: a VOLATILITY-TARGETED / crash-protected overlay in the
    spirit of Barroso & Santa-Clara (2015): scale gross exposure by
    w_t = sigma_target / sigma_hat_{t-1}, where sigma_hat is the trailing
-   realised volatility of the WML book (Daniel & Moskowitz 2016) -
+   realised volatility of the WML portfolio (Daniel & Moskowitz 2016) -
    "dynamic risk management nearly doubles Sharpe".
 4. Computes, for every strategy AND the benchmark, standard performance
    measures: annualised return, annualised volatility,
    maximum drawdown and the Sharpe ratio.
-5. Produces the presentation charts and saves all outputs.
+5. Produces charts and saves all outputs.
 
 Design notes
 ---------------------------
@@ -30,7 +27,7 @@ Design notes
   with data available up to month-end t.
 * Survivorship / selection bias: the universe is built from names known to be
   relevant TODAY, so it is forward-looking. Pure-plays only enter when listed
-  (unbalanced panel). These limitations are disclosed in the presentation.
+  (unbalanced panel). These limitations are disclosed in 'Quantum_Momentum.ipynb'.
 """
 
 from __future__ import annotations
@@ -42,9 +39,9 @@ import pandas as pd
 
 warnings.filterwarnings("ignore")
 
-# --------------------------------------------------------------------------- #
+
 # Configuration
-# --------------------------------------------------------------------------- #
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(HERE, "data_cache")
 OUT_DIR = os.path.join(HERE, "outputs")
@@ -58,7 +55,7 @@ SKIP = 1                          # skip most recent month (12-1 momentum)
 N_QUANTILES = 5                   # quintiles
 MIN_NAMES = 15                    # min eligible names to form quintiles
 VOL_TARGET = 0.12                 # annualised target vol for WML (Barroso-Santa-Clara)
-VOL_TARGET_LONGONLY = 0.25        # annualised target vol for the long-only book
+VOL_TARGET_LONGONLY = 0.25        # annualised target vol for the long-only portfolio (more aggressive, since no short leg)
 VOL_LOOKBACK_D = 126              # ~6 months of trading days for realised vol
 MAX_LEVERAGE = 2.0                # cap on vol-target leverage
 RF_ANNUAL = 0.0                   # risk-free assumed 0 (disclosed); Sharpe = excess/vol
@@ -66,8 +63,8 @@ TRADING_DAYS = 252
 
 BENCHMARK = "QTUM"                # Defiance Quantum ETF - sector benchmark
 
-# Self-built quantum + enabling-technology universe (~70 names).
-# Grouped only for documentation, the strategy treats them as one cross-section.
+# Self-built quantum + enabling-technology universe (~60 names)
+# Grouped only for documentation, the strategy treats them as one cross-section
 UNIVERSE = {
     "pure_play_quantum": ["IONQ", "RGTI", "QBTS", "QUBT", "ARQQ", "LAES"],
     "semis_and_equipment": [
@@ -84,9 +81,9 @@ UNIVERSE = {
 TICKERS = sorted({t for grp in UNIVERSE.values() for t in grp})
 
 
-# --------------------------------------------------------------------------- #
+
 # 1. Data acquisition (with on-disk cache so re-runs are instant)
-# --------------------------------------------------------------------------- #
+
 def download_prices() -> pd.DataFrame:
     """Daily adjusted-close prices for the universe + benchmark, cached to CSV."""
     cache = os.path.join(CACHE_DIR, "prices_daily.csv")
@@ -106,18 +103,18 @@ def download_prices() -> pd.DataFrame:
     return raw
 
 
-# --------------------------------------------------------------------------- #
+
 # 2. Cross-sectional 12-1 momentum backtest (daily accounting, monthly rebalance)
-# --------------------------------------------------------------------------- #
+
 def run_backtest(px: pd.DataFrame):
     bench_px = px[BENCHMARK].dropna()
     stocks_px = px[TICKERS].copy()
 
-    # Monthly month-end prices and the 12-1 momentum signal.
+    # Monthly month-end prices and the 12-1 momentum signal
     m_px = stocks_px.resample("ME").last()
     signal = m_px.shift(SKIP) / m_px.shift(LOOKBACK) - 1.0   # known at each month-end t
 
-    # Daily simple returns of every stock (for daily P&L accounting).
+    # Daily simple returns of every stock (for daily P&L accounting)
     d_ret = stocks_px.pct_change()
 
     form_dates = m_px.index[(m_px.index >= pd.Timestamp(BACKTEST_START))]
@@ -158,7 +155,7 @@ def run_backtest(px: pd.DataFrame):
     wml = pd.Series(wml_daily).sort_index()        # gross (full-exposure) WML
     longonly = pd.Series(long_daily).sort_index()  # long top-quintile only
 
-    # ---- Vol-targeting overlay (Barroso-Santa-Clara) -------------------- #
+    # ---- Vol-targeting overlay (Barroso-Santa-Clara)
     # Reusable: scale a gross daily-return series by leverage L_f fixed at each
     # formation date f, where L_f = target / sigma_hat_f, capped. sigma_hat is the
     # trailing ~126-day realised vol (lagged 1 day) -> uses only past information.
@@ -179,7 +176,7 @@ def run_backtest(px: pd.DataFrame):
     voltgt, lev_wml, sigma_hat_wml = apply_vol_target(wml, VOL_TARGET)
     lo_voltgt, lev_lo, _ = apply_vol_target(longonly, VOL_TARGET_LONGONLY)
 
-    # ---- Benchmark daily returns over the common window ----------------- #
+    # ---- Benchmark daily returns over the common window
     bench_ret = bench_px.pct_change().reindex(wml.index).dropna()
 
     results = {
@@ -199,9 +196,9 @@ def run_backtest(px: pd.DataFrame):
     return results, diagnostics
 
 
-# --------------------------------------------------------------------------- #
+
 # 3. Performance metrics
-# --------------------------------------------------------------------------- #
+
 def equity_curve(daily_ret: pd.Series) -> pd.Series:
     return (1.0 + daily_ret.fillna(0)).cumprod()
 
@@ -275,7 +272,7 @@ if __name__ == "__main__":
     with pd.option_context("display.float_format", lambda x: f"{x:,.2%}", "display.width", 220):
         print(stress_df.to_string())
 
-    # Persist outputs for the notebook / presentation
+    # Persist outputs
     table.to_csv(os.path.join(OUT_DIR, "metrics_full_sample.csv"))
     stress_df.to_csv(os.path.join(OUT_DIR, "stress_windows.csv"))
     eqs = pd.DataFrame({name: equity_curve(r) for name, r in results.items()})
