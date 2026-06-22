@@ -59,7 +59,7 @@ VOL_TARGET = 0.12                 # annualised target vol for WML (Barroso-Santa
 VOL_TARGET_LONGONLY = 0.25        # annualised target vol for the long-only portfolio (more aggressive, since no short leg)
 VOL_LOOKBACK_D = 126              # ~6 months of trading days for realised vol
 MAX_LEVERAGE = 2.0                # cap on vol-target leverage
-RF_ANNUAL = 0.0                   # risk-free assumed 0 (disclosed); Sharpe = excess/vol 
+RF_ANNUAL = 0.0                   # risk-free assumed 0 (to isolate pure momentum alpha); Sharpe = excess/vol 
 TRADING_DAYS = 252
 
 BENCHMARK = "QTUM"                # Defiance Quantum ETF - sector benchmark
@@ -142,6 +142,7 @@ def run_backtest(px: pd.DataFrame):
         leg_records.append({"date": f, "n_eligible": len(sig),
                             "winners": list(winners), "losers": list(losers)})
 
+        # Monthly rebalancing for computational simplicity, assuming daily-drift maintenance
         hold_days = daily_index[(daily_index > f) & (daily_index <= nxt)]
         for d in hold_days:
             w_ret = d_ret.loc[d, winners].dropna()   # daily average profit of winners (Long bet)
