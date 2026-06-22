@@ -214,7 +214,9 @@ def perf_metrics(daily_ret: pd.Series) -> dict:
     rf_daily = RF_ANNUAL / TRADING_DAYS
     sharpe = (r.mean() - rf_daily) / r.std() * np.sqrt(TRADING_DAYS) if r.std() > 0 else np.nan
     dd = (eq / eq.cummax() - 1.0).min()
-    return {"CAGR": cagr, "Ann.Vol": ann_vol, "Sharpe": sharpe, "MaxDD": dd, "n_days": n}
+    skew = r.skew()
+    kurt = r.kurtosis()
+    return {"CAGR": cagr, "Ann.Vol": ann_vol, "Sharpe": sharpe, "MaxDD": dd, "Skewness": skew, "Kurtosis": kurt, "n_days": n}
 
 def metrics_table(results: dict, common_window: bool = False) -> pd.DataFrame:
     res = results
@@ -224,7 +226,7 @@ def metrics_table(results: dict, common_window: bool = False) -> pd.DataFrame:
         res = {k: v.loc[start:end] for k, v in results.items()}
     rows = {name: perf_metrics(r) for name, r in res.items()}
     df = pd.DataFrame(rows).T
-    df = df[["CAGR", "Ann.Vol", "Sharpe", "MaxDD", "n_days"]]
+    df = df[["CAGR", "Ann.Vol", "Sharpe", "MaxDD", "Skewness", "Kurtosis", "n_days"]]
     return df
 
 def max_dd_date(daily_ret: pd.Series):
