@@ -30,6 +30,3 @@ With: σ̂ = trailing 126-day realised vol of the WML book. σ_target = 12 % for
 - WML + vol-target: vol **13 %**, max drawdown **−35 %**.
 - Quantum crash (Nov-2024→Mar-2025): naive **−66 %** vs crash-protected **−25 %**.
 - QTUM benchmark: Sharpe ≈ **1.14**, beats every momentum variant on a risk-adjusted basis.
-
-
-We use a standard σ_target = 12% . For the Long-Only variant, we use a more aggressive σ_target = 25% 
