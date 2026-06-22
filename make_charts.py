@@ -94,7 +94,7 @@ def chart_vol_leverage(diag):
     shade_crashes(ax1)
     l1, lab1 = ax1.get_legend_handles_labels()
     l2, lab2 = ax2.get_legend_handles_labels()
-    ax1.legend(l1 + l2, lab1 + lab2, loc="upper left", fontsize=9)
+    ax1.legend(l1 + l2, lab1 + lab2, loc="upper left", bbox_to_anchor=(0.02, 0.97), fontsize=9)
     fig.savefig(os.path.join(OUT, "fig3_vol_leverage.png"))
     plt.close(fig)
 
@@ -106,7 +106,7 @@ def chart_crash_zoom(results, px):
         2, 1, figsize=(11, 7.4), sharex=True,
         gridspec_kw={"height_ratios": [1.0, 1.0]})
 
-    # --- Top: the underlying sector boom & bust (context / the "why") ---
+    # --- Top: the underlying sector boom & bust (context / the "why")
     pure = [t for t in qm.UNIVERSE["pure_play_quantum"] if t in px.columns]
     pp = px[pure].pct_change().loc[a:b].mean(axis=1)
     pp_eq = (1 + pp.fillna(0)).cumprod(); pp_eq /= pp_eq.iloc[0]
@@ -116,10 +116,12 @@ def chart_crash_zoom(results, px):
     axT.set_ylabel("Growth of 1\n(rebased Nov 2024)")
     axT.set_title("The quantum momentum crash, up close")
     axT.legend(loc="upper left", fontsize=9)
-    axT.annotate(f"Pure-plays ~{pp_eq.max():.0f}x\n(Rigetti +1,654%/yr,\nGoogle 'Willow')",
-                 xy=(pp_eq.idxmax(), pp_eq.max()*0.85), fontsize=8, color="purple", ha="center")
+    annotate_x = pp_eq.idxmax() - pd.Timedelta(days=12)
+    annotate_y = pp_eq.max() * 0.70
+    axT.annotate(f"Pure-plays ~{pp_eq.max():.0f}x\n(Rigetti +1,650%/yr,\nGoogle Willow)",
+                 xy=(annotate_x, annotate_y), fontsize=8, color="purple", ha="center")
 
-    # --- Bottom: what it did to the momentum strategies (consistent rebasing) ---
+    # --- Bottom: what it did to the momentum strategies (consistent rebasing)
     eqs = {}
     for name in ["WML (long-short, gross)", "WML + Vol-target", "Benchmark (QTUM)"]:
         r = results[name].loc[a:b]
@@ -133,7 +135,7 @@ def chart_crash_zoom(results, px):
     wml_dd = wml_eq.min() - 1.0
     vt_at = eqs["WML + Vol-target"].loc[trough] - 1.0
     axB.set_ylabel("Growth of 1\n(rebased Nov 2024)")
-    axB.legend(loc="lower left", fontsize=9)
+    axB.legend(loc="lower left", bbox_to_anchor=(0.01, 0.15), fontsize=9)
     axB.set_title(f"At the trough ({trough.date()}): naive WML {wml_dd:.0%} vs crash-protected {vt_at:.0%}")
     # Two-phase annotation
     axB.axvspan(pd.Timestamp("2024-11-01"), pd.Timestamp("2024-12-31"), color="orange", alpha=0.08)
@@ -159,7 +161,7 @@ def main():
     chart_drawdown(results)
     chart_vol_leverage(diag)
     chart_crash_zoom(results, px)
-    print("[charts] wrote fig1..fig4 to", OUT)
+    print("[charts] charts generated")
 
 
 if __name__ == "__main__":

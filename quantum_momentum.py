@@ -27,7 +27,8 @@ Design notes
   with data available up to month-end t.
 * Survivorship / selection bias: the universe is built from names known to be
   relevant TODAY, so it is forward-looking. Pure-plays only enter when listed
-  (unbalanced panel). These limitations are disclosed in 'Quantum_Momentum.ipynb'.
+  (unbalanced panel).
+* Limitations are disclosed in 'Quantum_Momentum.ipynb'.
 """
 
 from __future__ import annotations
@@ -58,7 +59,7 @@ VOL_TARGET = 0.12                 # annualised target vol for WML (Barroso-Santa
 VOL_TARGET_LONGONLY = 0.25        # annualised target vol for the long-only portfolio (more aggressive, since no short leg)
 VOL_LOOKBACK_D = 126              # ~6 months of trading days for realised vol
 MAX_LEVERAGE = 2.0                # cap on vol-target leverage
-RF_ANNUAL = 0.0                   # risk-free assumed 0 (disclosed); Sharpe = excess/vol
+RF_ANNUAL = 0.0                   # risk-free assumed 0 (disclosed); Sharpe = excess/vol 
 TRADING_DAYS = 252
 
 BENCHMARK = "QTUM"                # Defiance Quantum ETF - sector benchmark
@@ -114,10 +115,10 @@ def run_backtest(px: pd.DataFrame):
     m_px = stocks_px.resample("ME").last()
     signal = m_px.shift(SKIP) / m_px.shift(LOOKBACK) - 1.0   # known at each month-end t
 
-    # Daily simple returns of every stock (for daily P&L accounting)
+    # Daily simple percentage returns of every stock (for daily P&L accounting)
     d_ret = stocks_px.pct_change()
 
-    form_dates = m_px.index[(m_px.index >= pd.Timestamp(BACKTEST_START))]
+    form_dates = m_px.index[(m_px.index >= pd.Timestamp(BACKTEST_START))]   # formation dates (month-ends)
     daily_index = stocks_px.index
 
     wml_daily, long_daily = {}, {}     # date -> return
@@ -143,8 +144,8 @@ def run_backtest(px: pd.DataFrame):
 
         hold_days = daily_index[(daily_index > f) & (daily_index <= nxt)]
         for d in hold_days:
-            w_ret = d_ret.loc[d, winners].dropna()
-            l_ret = d_ret.loc[d, losers].dropna()
+            w_ret = d_ret.loc[d, winners].dropna()   # daily average profit of winners (Long bet)
+            l_ret = d_ret.loc[d, losers].dropna()    # daily average profit of losers (Short bet)
             if len(w_ret) == 0:
                 continue
             long_leg = w_ret.mean()
@@ -158,7 +159,7 @@ def run_backtest(px: pd.DataFrame):
     # ---- Vol-targeting overlay (Barroso-Santa-Clara)
     # Reusable: scale a gross daily-return series by leverage L_f fixed at each
     # formation date f, where L_f = target / sigma_hat_f, capped. sigma_hat is the
-    # trailing ~126-day realised vol (lagged 1 day) -> uses only past information.
+    # trailing ~126-day realised vol (lagged 1 day) -> uses only past information
     def apply_vol_target(gross: pd.Series, target: float):
         sigma_hat = gross.rolling(VOL_LOOKBACK_D).std().shift(1) * np.sqrt(TRADING_DAYS)
         leverage = (target / sigma_hat).clip(upper=MAX_LEVERAGE)
