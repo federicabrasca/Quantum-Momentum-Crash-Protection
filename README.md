@@ -21,6 +21,7 @@ with a **volatility-targeting / crash-protection** overlay (Barroso–Santa-Clar
 - **Signal** at month-end *t*: `M = P[t-1]/P[t-12] − 1` (12-1, skip-month), uses info only up to *t−1*.
 - **Portfolios:** quintile sort → long top 20 % / short bottom 20 % (**WML**), also a realistic **long-only** book.
 - **Vol-targeting:** `w_t = σ_target / σ̂_{t-1}`
+
 With: σ̂ = trailing 126-day realised vol of the WML book. σ_target = 12 % for the WML long-short portfolio (following Barroso-Santa-Clara) and = 25 % for the Long-Only variant to avoid severe cash-drag (as holding a purely long tech basket naturally carries a higher baseline volatility). leverage ≤ 2×, the leverage for month *t+1* uses vol only through month-end *t*. 
 - **Benchmark:** QTUM (Defiance Quantum ETF) buy-and-hold, same metrics computed for it.
 
